@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Date With You</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,500&family=Great+Vibes&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body { font-family:'Montserrat',sans-serif; background:#1a0510; color:#f7e8ec; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+  .wrap { position:relative; min-height:100vh; width:100%; overflow:hidden; }
+  .bg { position:fixed; inset:0; background:radial-gradient(120% 80% at 50% 0%, #5c0a26 0%, #2c0413 45%, #14020a 100%); z-index:0; }
+  .glow { position:fixed; left:50%; top:18%; width:420px; height:420px; transform:translateX(-50%); background:radial-gradient(circle, rgba(255,77,109,0.35) 0%, rgba(255,77,109,0) 70%); filter:blur(10px); z-index:0; animation:pulse 5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:.55;transform:translateX(-50%) scale(1);} 50%{opacity:.9;transform:translateX(-50%) scale(1.12);} }
+  .heart { position:fixed; bottom:-40px; color:rgba(255,120,150,0.7); z-index:1; animation:rise linear infinite; }
+  @keyframes rise { 0%{ transform:translateY(0) rotate(0); opacity:0;} 10%{opacity:.9;} 90%{opacity:.7;} 100%{ transform:translateY(-110vh) rotate(360deg); opacity:0;} }
+  .content { position:relative; z-index:2; padding:54px 26px 80px; text-align:center; }
+  .script { font-family:'Great Vibes',cursive; font-size:62px; line-height:1.05; color:#ffd7e0; margin:8px 0 4px; text-shadow:0 2px 24px rgba(255,77,109,0.5); opacity:0; animation:fadeUp 1s ease forwards .35s; }
+  .sub { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:21px; color:#f1c6d1; margin-bottom:26px; opacity:0; animation:fadeUp 1s ease forwards .6s; }
+  .divider { width:60px; height:1px; background:linear-gradient(90deg,transparent,#ff7a96,transparent); margin:0 auto 26px; opacity:0; animation:fadeUp 1s ease forwards .75s; }
+  .card { background:linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border:1px solid rgba(255,154,176,0.28); border-radius:22px; padding:30px 24px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); box-shadow:0 18px 50px rgba(0,0,0,0.45); opacity:0; animation:fadeUp 1s ease forwards .9s; }
+  .card .venue { font-family:'Cormorant Garamond',serif; font-weight:600; font-size:34px; letter-spacing:2px; color:#fff; }
+  .card .tag { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#ff9bb0; margin-top:4px; }
+  .rows { margin-top:24px; text-align:left; }
+  .row { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,154,176,0.14); }
+  .row:last-child { border-bottom:none; }
+  .ic { font-size:20px; width:26px; text-align:center; }
+  .row .lbl { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#ff9bb0; }
+  .row .val { font-family:'Cormorant Garamond',serif; font-size:20px; color:#fff; line-height:1.25; }
+  .note { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:19px; color:#f3cdd6; margin:30px 8px 6px; line-height:1.5; opacity:0; animation:fadeUp 1s ease forwards 1.15s; }
+  .signoff { font-family:'Great Vibes',cursive; font-size:30px; color:#ffd7e0; margin-top:10px; opacity:0; animation:fadeUp 1s ease forwards 1.3s; }
+  .btn { display:inline-block; margin-top:30px; padding:15px 40px; border-radius:40px; border:none; cursor:pointer; background:linear-gradient(135deg,#ff4d6d,#c9184a); color:#fff; font-family:'Montserrat'; font-weight:500; letter-spacing:2px; text-transform:uppercase; font-size:12px; box-shadow:0 10px 28px rgba(255,77,109,0.5); opacity:0; animation:fadeUp 1s ease forwards 1.45s; transition:transform .2s; }
+  .btn:active { transform:scale(.95); }
+  .secret { max-height:0; overflow:hidden; transition:max-height .7s ease; }
+  .secret.open { max-height:260px; }
+  .secret p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:19px; line-height:1.6; color:#ffd7e0; margin-top:22px; }
+  .music-toggle { position:fixed; top:14px; right:14px; z-index:5; display:flex; align-items:center; gap:7px; padding:9px 15px; border-radius:30px; border:1px solid rgba(255,154,176,0.4); background:rgba(44,4,19,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#ffd7e0; font-family:'Montserrat'; font-size:11px; letter-spacing:1px; cursor:pointer; }
+  .music-toggle:active { transform:scale(.95); }
+  #player { position:fixed; width:1px; height:1px; left:-9999px; top:-9999px; opacity:0; pointer-events:none; }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(24px);} to{opacity:1; transform:translateY(0);} }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="glow"></div>
+  <button class="music-toggle" id="musicToggle">&#127925; Play our song</button>
+  <div class="wrap">
+    <div class="content">
+      <div class="script">Happy Birthday,<br>my love</div>
+      <div class="sub">tonight, it's just you &amp; me &#10084;</div>
+      <div class="divider"></div>
+      <div class="card">
+        <div class="venue">BAC&Aacute;N</div>
+        <div class="tag">Latin American &middot; Michelin Guide</div>
+        <div class="rows">
+          <div class="row"><div class="ic">&#128197;</div><div><div class="lbl">When</div><div class="val">Sunday, June 21st &middot; 8:00 PM</div></div></div>
+          <div class="row"><div class="ic">&#127863;</div><div><div class="lbl">Dress Code</div><div class="val">Something that makes my heart skip</div></div></div>
+          <div class="row"><div class="ic">&#128293;</div><div><div class="lbl">The Plan</div><div class="val">Candlelight, good wine &amp; a whole lot of you</div></div></div>
+        </div>
+      </div>
+      <div class="note">A year more gorgeous, a year more mine.<br>Let me spoil you rotten tonight.</div>
+      <div class="signoff">Forever yours &#10084;</div>
+      <button class="btn" id="btn">Tap for a secret &#128156;</button>
+      <div class="secret" id="secret">
+        <p>"I'd choose this table, this night, and you &mdash; in every lifetime. Wear the red one. I'll be the one who can't stop staring. Happy birthday, beautiful."</p>
+      </div>
+    </div>
+  </div>
+  <div id="player"></div>
+<script>
+  // floating hearts
+  var hearts=['\u2764','\u2764\uFE0F','\uD83D\uDC95','\uD83D\uDC96'];
+  for(var i=0;i<14;i++){ var h=document.createElement('div'); h.className='heart'; h.textContent=hearts[Math.floor(Math.random()*hearts.length)]; h.style.left=Math.random()*100+'vw'; h.style.fontSize=(12+Math.random()*22)+'px'; h.style.animationDuration=(7+Math.random()*9)+'s'; h.style.animationDelay=(Math.random()*8)+'s'; document.body.appendChild(h); }
+
+  // secret reveal
+  document.getElementById('btn').addEventListener('click',function(){ document.getElementById('secret').classList.toggle('open'); this.textContent='With all my heart \u2764\uFE0F'; });
+
+  // ---- YouTube background music ----
+  var ytPlayer, ready=false, wantPlaying=false;
+  var toggle=document.getElementById('musicToggle');
+
+  var tag=document.createElement('script');
+  tag.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+
+  window.onYouTubeIframeAPIReady=function(){
+    ytPlayer=new YT.Player('player',{
+      host:'https://www.youtube-nocookie.com',
+      videoId:'cNGjD0VG4R8',
+      playerVars:{ autoplay:0, controls:0, loop:1, playlist:'cNGjD0VG4R8', playsinline:1 },
+      events:{
+        onReady:function(e){ ready=true; e.target.setVolume(60); if(wantPlaying){ e.target.playVideo(); } },
+        onStateChange:function(e){
+          if(e.data===YT.PlayerState.PLAYING){ wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; }
+          else if(e.data===YT.PlayerState.PAUSED || e.data===YT.PlayerState.ENDED){ wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; }
+        }
+      }
+    });
+  };
+
+  function playMusic(){ wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; if(ready && ytPlayer){ ytPlayer.playVideo(); } }
+  function pauseMusic(){ wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; if(ready && ytPlayer){ ytPlayer.pauseVideo(); } }
+
+  // manual toggle button
+  toggle.addEventListener('click', function(ev){ ev.stopPropagation(); if(wantPlaying){ pauseMusic(); } else { playMusic(); } });
+
+  // auto-start on first tap anywhere (iOS needs a user gesture)
+  function firstTap(){ if(!wantPlaying){ playMusic(); } document.removeEventListener('click', firstTap); document.removeEventListener('touchend', firstTap); }
+  document.addEventListener('click', firstTap);
+  document.addEventListener('touchend', firstTap);
+</script>
+</body>
+</html>
