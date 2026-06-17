@@ -76,8 +76,9 @@
   // secret reveal
   document.getElementById('btn').addEventListener('click',function(){ document.getElementById('secret').classList.toggle('open'); this.textContent='With all my heart \u2764\uFE0F'; });
 
-  // ---- YouTube background music ----
-  var ytPlayer, ready=false, wantPlaying=false;
+  // ---- YouTube background music: loop first 60 seconds (0:00-1:00) ----
+  var LOOP_START = 0, LOOP_END = 60;
+  var ytPlayer, ready=false, wantPlaying=false, loopTimer=null;
   var toggle=document.getElementById('musicToggle');
 
   var tag=document.createElement('script');
@@ -88,24 +89,39 @@
     ytPlayer=new YT.Player('player',{
       host:'https://www.youtube-nocookie.com',
       videoId:'cNGjD0VG4R8',
-      playerVars:{ autoplay:0, controls:0, loop:1, playlist:'cNGjD0VG4R8', playsinline:1 },
+      playerVars:{ autoplay:0, controls:0, start:LOOP_START, playsinline:1 },
       events:{
         onReady:function(e){ ready=true; e.target.setVolume(60); if(wantPlaying){ e.target.playVideo(); } },
         onStateChange:function(e){
-          if(e.data===YT.PlayerState.PLAYING){ wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; }
-          else if(e.data===YT.PlayerState.PAUSED || e.data===YT.PlayerState.ENDED){ wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; }
+          if(e.data===YT.PlayerState.PLAYING){
+            wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; startLoopWatch();
+          } else if(e.data===YT.PlayerState.PAUSED){
+            wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; stopLoopWatch();
+          } else if(e.data===YT.PlayerState.ENDED){
+            ytPlayer.seekTo(LOOP_START); ytPlayer.playVideo();
+          }
         }
       }
     });
   };
 
-  function playMusic(){ wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; if(ready && ytPlayer){ ytPlayer.playVideo(); } }
+  function startLoopWatch(){
+    stopLoopWatch();
+    loopTimer=setInterval(function(){
+      if(ready && ytPlayer && ytPlayer.getCurrentTime){
+        if(ytPlayer.getCurrentTime() >= LOOP_END){ ytPlayer.seekTo(LOOP_START); }
+      }
+    }, 500);
+  }
+  function stopLoopWatch(){ if(loopTimer){ clearInterval(loopTimer); loopTimer=null; } }
+
+  function playMusic(){ wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; if(ready && ytPlayer){ ytPlayer.seekTo(LOOP_START); ytPlayer.playVideo(); } }
   function pauseMusic(){ wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; if(ready && ytPlayer){ ytPlayer.pauseVideo(); } }
 
-  // manual toggle button
+  // manual toggle
   toggle.addEventListener('click', function(ev){ ev.stopPropagation(); if(wantPlaying){ pauseMusic(); } else { playMusic(); } });
 
-  // auto-start on first tap anywhere (iOS needs a user gesture)
+  // auto-start on first tap anywhere
   function firstTap(){ if(!wantPlaying){ playMusic(); } document.removeEventListener('click', firstTap); document.removeEventListener('touchend', firstTap); }
   document.addEventListener('click', firstTap);
   document.addEventListener('touchend', firstTap);
