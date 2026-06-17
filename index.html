@@ -35,8 +35,6 @@
   .secret { max-height:0; overflow:hidden; transition:max-height .7s ease; }
   .secret.open { max-height:260px; }
   .secret p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:19px; line-height:1.6; color:#ffd7e0; margin-top:22px; }
-  .music-toggle { position:fixed; top:14px; right:14px; z-index:5; display:flex; align-items:center; gap:7px; padding:9px 15px; border-radius:30px; border:1px solid rgba(255,154,176,0.4); background:rgba(44,4,19,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#ffd7e0; font-family:'Montserrat'; font-size:11px; letter-spacing:1px; cursor:pointer; }
-  .music-toggle:active { transform:scale(.95); }
   #player { position:fixed; width:1px; height:1px; left:-9999px; top:-9999px; opacity:0; pointer-events:none; }
   @keyframes fadeUp { from{opacity:0; transform:translateY(24px);} to{opacity:1; transform:translateY(0);} }
 </style>
@@ -44,7 +42,6 @@
 <body>
   <div class="bg"></div>
   <div class="glow"></div>
-  <button class="music-toggle" id="musicToggle">&#127925; Play our song</button>
   <div class="wrap">
     <div class="content">
       <div class="script">Happy Birthday,<br>my love</div>
@@ -73,13 +70,9 @@
   var hearts=['\u2764','\u2764\uFE0F','\uD83D\uDC95','\uD83D\uDC96'];
   for(var i=0;i<14;i++){ var h=document.createElement('div'); h.className='heart'; h.textContent=hearts[Math.floor(Math.random()*hearts.length)]; h.style.left=Math.random()*100+'vw'; h.style.fontSize=(12+Math.random()*22)+'px'; h.style.animationDuration=(7+Math.random()*9)+'s'; h.style.animationDelay=(Math.random()*8)+'s'; document.body.appendChild(h); }
 
-  // secret reveal
-  document.getElementById('btn').addEventListener('click',function(){ document.getElementById('secret').classList.toggle('open'); this.textContent='With all my heart \u2764\uFE0F'; });
-
-  // ---- YouTube background music: loop first 60 seconds (0:00-1:00) ----
-  var LOOP_START = 0, LOOP_END = 60;
+  // ---- YouTube music: loop first 100 seconds (0:00-1:40), starts on the secret tap ----
+  var LOOP_START = 0, LOOP_END = 100;
   var ytPlayer, ready=false, wantPlaying=false, loopTimer=null;
-  var toggle=document.getElementById('musicToggle');
 
   var tag=document.createElement('script');
   tag.src='https://www.youtube.com/iframe_api';
@@ -93,38 +86,34 @@
       events:{
         onReady:function(e){ ready=true; e.target.setVolume(60); if(wantPlaying){ e.target.playVideo(); } },
         onStateChange:function(e){
-          if(e.data===YT.PlayerState.PLAYING){
-            wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; startLoopWatch();
-          } else if(e.data===YT.PlayerState.PAUSED){
-            wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; stopLoopWatch();
-          } else if(e.data===YT.PlayerState.ENDED){
-            ytPlayer.seekTo(LOOP_START); ytPlayer.playVideo();
-          }
+          if(e.data===YT.PlayerState.PLAYING){ startLoopWatch(); }
+          else if(e.data===YT.PlayerState.ENDED){ ytPlayer.seekTo(LOOP_START); ytPlayer.playVideo(); }
         }
       }
     });
   };
 
   function startLoopWatch(){
-    stopLoopWatch();
+    if(loopTimer) return;
     loopTimer=setInterval(function(){
       if(ready && ytPlayer && ytPlayer.getCurrentTime){
         if(ytPlayer.getCurrentTime() >= LOOP_END){ ytPlayer.seekTo(LOOP_START); }
       }
     }, 500);
   }
-  function stopLoopWatch(){ if(loopTimer){ clearInterval(loopTimer); loopTimer=null; } }
 
-  function playMusic(){ wantPlaying=true; toggle.innerHTML='\u23F8 Pause'; if(ready && ytPlayer){ ytPlayer.seekTo(LOOP_START); ytPlayer.playVideo(); } }
-  function pauseMusic(){ wantPlaying=false; toggle.innerHTML='\uD83C\uDFB5 Play our song'; if(ready && ytPlayer){ ytPlayer.pauseVideo(); } }
+  function startMusic(){
+    if(wantPlaying) return;
+    wantPlaying=true;
+    if(ready && ytPlayer){ ytPlayer.seekTo(LOOP_START); ytPlayer.playVideo(); }
+  }
 
-  // manual toggle
-  toggle.addEventListener('click', function(ev){ ev.stopPropagation(); if(wantPlaying){ pauseMusic(); } else { playMusic(); } });
-
-  // auto-start on first tap anywhere
-  function firstTap(){ if(!wantPlaying){ playMusic(); } document.removeEventListener('click', firstTap); document.removeEventListener('touchend', firstTap); }
-  document.addEventListener('click', firstTap);
-  document.addEventListener('touchend', firstTap);
+  // secret reveal + music start on the same tap
+  document.getElementById('btn').addEventListener('click', function(){
+    document.getElementById('secret').classList.toggle('open');
+    this.textContent='With all my heart \u2764\uFE0F';
+    startMusic();
+  });
 </script>
 </body>
 </html>
